@@ -1,0 +1,465 @@
+<!--
+I am not sure why this works but it fixes the problem. 
+
+drunk, fix later
+
+Here be dragons
+
+This code sucks, you know it and I know it.  
+
+Move on and call me an idiot later.
+
+ 
+ 
+
+
+ *                    .::::.
+ *                  .::::::::.
+ *                 :::::::::::   I Love My Code
+ *             ..:::::::::::'
+ *           '::::::::::::'
+ *             .::::::::::
+ *        '::::::::::::::..
+ *             ..::::::::::::.
+ *           ``::::::::::::::::
+ *            ::::``:::::::::'        .:::.
+ *           ::::'   ':::::'       .::::::::.
+ *         .::::'      ::::     .:::::::'::::.
+ *        .:::'       :::::  .:::::::::' ':::::.
+ *       .::'        :::::.:::::::::'      ':::::.
+ *      .::'         ::::::::::::::'         ``::::.
+ *  ...:::           ::::::::::::'              ``::.
+ * ```` ':.          ':::::::::'                  ::::..
+ *                    '.:::::'                    ':'````..
+
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Configurable Radar Chart</title>
+  <style>
+    :root {
+        --bg: #f8fafc;       
+        --panel: #ffffff;    
+        --ink: black;      
+        --muted: #64748b;    
+        --brand: #3b82f6;   
+        --fill: rgba(59,130,246,0.15); 
+    }
+
+    html,body{height:100%;}
+    body{
+        margin:0;
+        background:var(--bg);
+
+        font:16px/1.4 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji"
+    }
+    .wrap{
+        max-width:1100px;
+        margin:24px auto;
+        padding:20px;
+        display:grid;
+        grid-template-columns:500px 1fr;
+        gap:18px;
+    }
+    .card{
+        background: var(--panel);
+        border: 1px solid #1f2937;
+        border-radius: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.25);
+        display: flex;
+        flex-direction: column;
+    }
+    .card h2{margin:0 0 8px;font-size:18px}
+    .card .body{padding:16px;flex:1; display:flex; flex-direction:column;}
+    label{display:block;margin:10px 0 4px;color:var(--muted);font-size:13px}
+    input[type="text"], textarea, input[type="number"]{
+        width:100%;
+        box-sizing:border-box;
+        background:#f8fafc;
+        border:1px solid #243042;
+        color:var(--ink);
+        padding:10px 12px;
+        border-radius:10px;
+        outline:none
+    }
+    textarea{min-height:120px;resize:vertical}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .btns{display:flex;gap:10px;margin-top:12px}
+    button{
+        appearance:none;
+        border:1px solid #374151;
+        background:var(--bg);
+        color:var(--ink);
+        padding:10px 14px;
+        border-radius:12px;
+        cursor:pointer
+    }
+    button.primary{border-color:#7c5200;background:#f8fafc;}
+    .hint{color:var(--muted);font-size:12px}
+    .canvasWrap{
+        position:relative;
+        aspect-ratio:1/1;
+        min-height:800px;
+        flex:1;
+    }
+    .canvasWrap svg {
+      overflow: visible;
+    }
+    svg{width:100%;height:100%;display:block}
+    .ring{fill:none;stroke:black}
+    .axis{stroke:black}
+    .poly{fill:var(--fill);stroke:var(--brand);stroke-width:3}
+    @media (min-width: 768px){
+      .canvasWrap{min-height:750px;}
+    }
+    a{ text-decoration: none; color:black; font-size: 13px; transition: all 0.2s;}
+    a:hover{ transform:translateY(-5px); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="body">
+        <h2>Settings</h2>
+        <label>Level Labels (from outer to inner, comma-separated; not limited to A,B,C,D,E)</label>
+        <input id="levels" type="text" value="∞,A,B,C,D,E" />
+        <div class="row">
+            <div>
+              <label>Outer Radius (px): <span id="radiusVal">220</span></label>
+              <input id="radius" type="range" min="210" max="250" value="220" />
+            </div>
+            <div>
+              <label>Rotation Angle: <span id="rotateVal">-90</span></label>
+              <input id="rotate" type="range" min="-180" max="180" value="-90" />
+            </div>
+        </div>
+        <div class="row">
+            <div>
+                <label>Attribute Font Size: <span id="valueFontVal">25</span>px</label>
+                <input id="valueFont" type="range" min="20" max="30" value="25" />
+              </div>
+            <div>
+              <label>Item Font Size: <span id="valueFontVal2">16</span>px</label>
+              <input id="valueFont2" type="range" min="15" max="20" value="16" />
+            </div>
+        </div>
+        
+        <div class="row">
+          <div>
+            <label>Color For Items</label>
+            <input id="color" type="text" value="#000000" />
+          </div>
+          <div>
+            <label>Color For Values</label>
+            <input id="color1" type="text" value="#000000" />
+          </div>
+        </div>
+        
+        <div style="display: flex;margin-top: 5px;">
+          <a href="https://color.adobe.com/create/color-wheel" target="_blank">Link:Color Wheel</a>
+        </div>
+        <label>Items and Values (one per line: Name = Value; value can be number or letter/text level)</label>
+        <textarea id="items"></textarea>
+        <div class="btns">
+          <button class="primary" id="render">Render</button>
+          <button id="download">Export PNG</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="body">
+        <div class="canvasWrap">
+          <svg id="radar" viewBox="-300 -300 600 600" xmlns="http://www.w3.org/2000/svg" aria-label="Radar Chart"></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const el = document.getElementById("color");
+const rect = el.getBoundingClientRect();
+
+console.log("x:", rect.x, "y:", rect.y);
+console.log("top:", rect.top, "left:", rect.left);
+console.log("width:", rect.width, "height:", rect.height);
+
+const $ = sel => document.querySelector(sel);
+const TA = $('#items');
+const defaultLines = [
+  'Power = A',
+  'Speed = A',
+  'Range = C',
+  'Endurance = A',
+  'Precision = A',
+  'Growth = A',
+];
+TA.value = defaultLines.join('\n');
+const radiusInput = $('#radius');
+var R = 220;
+const rotateInput = $('#rotate');
+var rotate = -90;
+const valueFontInput = $('#valueFont');
+let valueFontSize = 25;
+const valueFontInput2 = $('#valueFont2');
+let valueFontSize2 = 16;
+const colore = $('#color');
+let color = "#000000";
+const color1e = $('#color1');
+let color1 = "#000000";
+colore.addEventListener('input', ()=>{
+  color = color1e.value;
+  if(color.length==7){
+    render();
+  }
+});
+color1e.addEventListener('input', ()=>{
+  color1 = color1e.value;
+  if(color1.length==7){
+    render();
+  }
+});
+valueFontInput2.addEventListener('input', ()=>{
+  valueFontSize2 = Number(valueFontInput2.value);
+  $('#valueFontVal2').textContent = valueFontSize2;
+  render();
+});
+valueFontInput.addEventListener('input', ()=>{
+  valueFontSize = Number(valueFontInput.value);
+  $('#valueFontVal').textContent = valueFontSize;
+  render();
+});
+
+rotateInput.addEventListener('input', ()=>{
+  rotate = Number(rotateInput.value);
+  render();
+});
+
+radiusInput.addEventListener('input', ()=>{
+  R = Number(radiusInput.value);
+  render();
+});
+
+function parseItems(text){
+  return text.split(/\n+/).map(s=>s.trim()).filter(Boolean).map(line=>{
+    const m = line.split('=');
+    const name = (m[0]||'').trim();
+    const raw = (m[1]||'').trim();
+    return { name, raw };
+  });
+}
+
+function toIndex(raw, levels){
+  if(raw === '') return null;
+  const n = levels.length;
+  if(/^\d+(?:\.\d+)?$/.test(raw)){
+    const v = +raw;
+    if(v<=1){
+      return (n-1) - Math.max(0, Math.min(1, v))*(n-1);
+    }
+    if(v>=1 && v<=n) return v-1;
+    return Math.max(0, Math.min(n-1, v));
+  }
+  const idx = levels.findIndex(l=> String(l).toLowerCase() === raw.toLowerCase());
+  if(idx>=0) return idx;
+  const letter = raw.trim()[0];
+  if(/[a-zA-Z]/.test(letter)){
+    const map = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    const pos = map.indexOf(letter.toUpperCase());
+    if(pos>=0) return Math.min(pos, n-1);
+  }
+  return null;
+}
+
+function pol2xy(r, ang){
+  const a = ang * Math.PI/180;
+  return [r*Math.cos(a), r*Math.sin(a)];
+}
+
+function render(){
+  const svg = $('#radar');
+  svg.innerHTML = '';
+
+  const levels = $('#levels').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const N = levels.length;
+
+  const items = parseItems(TA.value);
+  const axisCount = items.length;
+  if(axisCount === 0) return;
+
+  const step = 360 / axisCount;
+  var xx = R+20*valueFontSize/25;
+
+  const innerR = xx + 50;
+  const outerR = xx + 60;
+  const barCount = items.length * 4 - 2;
+  const barHeight = outerR - innerR;
+  const barWidth = 7;
+
+  for(let i=0; i<barCount; i++){
+    const angle = rotate + (360 / barCount) * i;
+    const rad = angle * Math.PI/180;
+    const x1 = innerR * Math.cos(rad);
+    const y1 = innerR * Math.sin(rad);
+    const x2 = (innerR + barHeight) * Math.cos(rad);
+    const y2 = (innerR + barHeight) * Math.sin(rad);
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1.toFixed(2));
+    line.setAttribute('y1', y1.toFixed(2));
+    line.setAttribute('x2', x2.toFixed(2));
+    line.setAttribute('y2', y2.toFixed(2));
+    line.setAttribute('stroke', 'black');
+    line.setAttribute('stroke-width', barWidth);
+    svg.appendChild(line);
+  }
+
+  var c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('class','ring');
+  c.setAttribute('cx','0');
+  c.setAttribute('cy','0');
+  c.setAttribute('r', R.toFixed(2));
+  svg.appendChild(c);
+
+  c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('class','ring');
+  c.setAttribute('cx','0');
+  c.setAttribute('cy','0');
+  c.setAttribute('r', innerR.toFixed(2));
+  svg.appendChild(c);
+
+  c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+  c.setAttribute('class','ring');
+  c.setAttribute('cx','0');
+  c.setAttribute('cy','0');
+  c.setAttribute('r',  outerR.toFixed(2));
+  svg.appendChild(c);
+
+  for(let i=1;i<N;i++){
+    const r = R * (N - i) / N;
+    const ang = rotate;
+    const [x, y] = pol2xy(r, ang);
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('class','ringLabel');
+    t.setAttribute('x', (x+12).toFixed(2));
+    t.setAttribute('y', y.toFixed(2));
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('dominant-baseline','middle');
+    t.textContent = levels[i] || '';
+    svg.appendChild(t);
+
+    const tickLength = 6;
+    for(let j=0;j<axisCount;j++){
+      const ang = rotate + step*j;
+      const [x, y] = pol2xy(r, ang);
+      const dx = -y / r;
+      const dy = x / r;
+      const x1 = x - dx*tickLength/2;
+      const y1 = y - dy*tickLength/2;
+      const x2 = x + dx*tickLength/2;
+      const y2 = y + dy*tickLength/2;
+      const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
+      tick.setAttribute('x1', x1.toFixed(2));
+      tick.setAttribute('y1', y1.toFixed(2));
+      tick.setAttribute('x2', x2.toFixed(2));
+      tick.setAttribute('y2', y2.toFixed(2));
+      tick.setAttribute('stroke', 'black');
+      tick.setAttribute('stroke-width', '1');
+      svg.appendChild(tick);
+    }
+  }
+
+  items.forEach((it, idx)=>{
+    const ang = rotate + step*idx;
+    const [x,y] = pol2xy(R, ang);
+    const axis = document.createElementNS('http://www.w3.org/2000/svg','line');
+    axis.setAttribute('class','axis');
+    axis.setAttribute('x1','0');
+    axis.setAttribute('y1','0');
+    axis.setAttribute('x2', x.toFixed(2));
+    axis.setAttribute('y2', y.toFixed(2));
+    svg.appendChild(axis);
+
+    const [lx,ly] = pol2xy(xx+30, ang);
+    const nameText = document.createElementNS('http://www.w3.org/2000/svg','text');
+    nameText.setAttribute('x', lx.toFixed(2));
+    nameText.setAttribute('y', ly.toFixed(2));
+    nameText.setAttribute('text-anchor','middle');
+    nameText.setAttribute('dominant-baseline','middle');
+    nameText.style=`font-size:${valueFontSize2};fill:${color};`;
+    let rotateName = ang + 90;
+    if(ly > 0){ rotateName += 180; }
+    nameText.setAttribute('transform', `rotate(${rotateName}, ${lx.toFixed(2)}, ${ly.toFixed(2)})`);
+    nameText.textContent = it.name;
+    svg.appendChild(nameText);
+
+    const [vx,vy] = pol2xy(xx, ang);
+    const valueText = document.createElementNS('http://www.w3.org/2000/svg','text');
+    valueText.setAttribute('x', vx.toFixed(2));
+    valueText.setAttribute('y', vy.toFixed(2));
+    valueText.setAttribute('text-anchor','middle');
+    valueText.setAttribute('dominant-baseline','middle');
+    valueText.style=`font-size:${valueFontSize}px;fill:${color1};`;
+    valueText.textContent = it.raw;
+    svg.appendChild(valueText);
+  });
+
+  const points = items.map((it, idx)=>{
+    const ix = toIndex(it.raw, levels);
+    const rate = (ix==null) ? 0 : (N - ix) / N;
+    const ang = rotate + step*idx;
+    const [x,y] = pol2xy(R*rate, ang);
+    return `${x.toFixed(2)},${y.toFixed(2)}`;
+  }).join(' ');
+
+  const poly = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  poly.setAttribute('class','poly');
+  poly.setAttribute('points', points);
+  svg.appendChild(poly);
+}
+
+$('#render').addEventListener('click', render);
+
+$('#download').addEventListener('click', () => {
+  const svg = document.getElementById('radar');
+  const clone = svg.cloneNode(true);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  const style = document.createElement('style');
+  style.textContent = `
+    .ring{fill:none;stroke:black;}
+    .axis{stroke:black;}
+    .axisLabel{font-size:12px;fill:#cbd5e1;}
+    .ringLabel{font-size:11px;fill:#94a3b8;}
+    .poly{fill:rgba(245,158,11,0.2);stroke:#f59e0b;stroke-width:3;}
+  `;
+  clone.prepend(style);
+  const xml = new XMLSerializer().serializeToString(clone);
+  const blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = function() {
+    const c = document.createElement('canvas');
+    c.width = 1200;
+    c.height = 1200;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    c.toBlob((b) => {
+      const a = document.createElement('a');
+      a.download = 'radar.png';
+      a.href = URL.createObjectURL(b);
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    });
+  };
+  img.src = url;
+});
+
+render();
+</script>
+</body>
+</html>
